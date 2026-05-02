@@ -84,11 +84,17 @@ async def check_sub(user_id):
 def menu():
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📝 Reklama yaratish")],
-            [KeyboardButton(text="📋 Reklamalarim")],
-            [KeyboardButton(text="📡 Kanallar")],
-            [KeyboardButton(text="➕ Kanal qo‘shish")],
-            [KeyboardButton(text="📊 Statistika")]
+            [
+                KeyboardButton(text="📝 Reklama yaratish"),
+                KeyboardButton(text="📋 Reklamalarim")
+            ],
+            [
+                KeyboardButton(text="📡 Kanallar"),
+                KeyboardButton(text="➕ Kanal qo‘shish")
+            ],
+            [
+                KeyboardButton(text="📊 Statistika")
+            ]
         ],
         resize_keyboard=True
     )
