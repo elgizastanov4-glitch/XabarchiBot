@@ -222,6 +222,20 @@ async def send(ad_id):
             pass
 
 
+# ================= ⏰ SCHEDULE JOB (SHUNI QO‘SH!) =================
+def add_schedule(ad_id: int, time_str: str):
+    run_time = datetime.strptime(time_str, "%Y-%m-%d %H:%M")
+
+    scheduler.add_job(
+        send,
+        trigger="date",
+        run_date=run_time,
+        args=[ad_id],
+        id=f"ad_{ad_id}",
+        replace_existing=True
+    )
+
+
 # ================= CALLBACK =================
 
 @dp.callback_query(F.data.startswith("send_"))
@@ -230,7 +244,7 @@ async def send_now(c: CallbackQuery):
     await c.message.answer("📤 Yuborildi")
 
 
-# 📋 REKLAMALARIM (SHUNI HAM QO‘SHIB QO‘YDIM)
+# 📋 REKLAMALARIM
 @dp.message(F.text == "📋 Reklamalarim")
 async def my_ads(m: Message):
     async with aiosqlite.connect(DB) as db:
@@ -256,7 +270,7 @@ async def my_ads(m: Message):
     await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 
-# ⏰ SCHEDULE
+# ⏰ SCHEDULE (1-QADAM)
 @dp.callback_query(F.data.startswith("schedule_"))
 async def schedule_ad(c: CallbackQuery, state: FSMContext):
     ad_id = int(c.data.split("_")[1])
@@ -267,6 +281,21 @@ async def schedule_ad(c: CallbackQuery, state: FSMContext):
     await c.message.answer(
         "⏰ Vaqtni kiriting:\n\nFormat:\n2026-05-03 18:30"
     )
+
+
+# ⏰ SCHEDULE (2-QADAM - SHU MUHIM QISM)
+@dp.message(AdState.schedule)
+async def schedule_save(m: Message, state: FSMContext):
+    data = await state.get_data()
+    ad_id = data["ad_id"]
+
+    try:
+        add_schedule(ad_id, m.text)  # 👈 scheduler shu yerda ishlaydi
+        await m.answer("⏰ Reklama muvaffaqiyatli rejalashtirildi!")
+    except Exception as e:
+        await m.answer(f"❌ Xatolik: {e}")
+
+    await state.clear()
 
 
 # 🗑 DELETE (TASDIQLASH BILAN)
@@ -300,7 +329,6 @@ async def confirm_delete(c: CallbackQuery):
 @dp.callback_query(F.data == "cancel_del")
 async def cancel_delete(c: CallbackQuery):
     await c.message.answer("❎ Bekor qilindi")
-
 # ================= CHANNELS =================
 @dp.message(F.text == "📡 Kanallar")
 async def channels(m: Message):
