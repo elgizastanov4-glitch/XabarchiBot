@@ -1,9 +1,10 @@
 import asyncio
 import json
+import os
 from datetime import datetime
 
 import aiosqlite
-from aiogram import Bot, Dispatcher, F
+from aiogram import Dispatcher, F
 from aiogram.enums import ParseMode
 from aiogram.client.bot import Bot, DefaultBotProperties
 from aiogram.types import *
@@ -12,11 +13,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
+
 # ================= CONFIG =================
-BOT_TOKEN = "8608111715:AAF0WAFMAeSebO0ketA9rhgkNVDw7lIFPMk"
+BOT_TOKEN = "8335969395:AAHTNeShYUJ_Zadfl1AjfB8w-4m60iaZFxU"
 ADMIN_ID = 6884014716
 
-DB = "bot.db"
+# 🔥 FIX 1: DB PATH (hosting uchun xavfsiz)
+DB = os.path.join(os.getcwd(), "bot.db")
+# agar xohlasang: DB = "/tmp/bot.db"
 
 bot = Bot(
     token=BOT_TOKEN,
@@ -204,7 +208,7 @@ async def send(ad_id):
             pass
 
 
-# ================= SEND CALLBACK =================
+# ================= CALLBACKS =================
 @dp.callback_query(F.data.startswith("send_"))
 async def send_now(call: CallbackQuery):
     ad_id = int(call.data.split("_")[1])
@@ -212,7 +216,6 @@ async def send_now(call: CallbackQuery):
     await call.message.answer("📤 Yuborildi")
 
 
-# ================= SCHEDULE =================
 @dp.callback_query(F.data.startswith("schedule_"))
 async def schedule(call: CallbackQuery, state: FSMContext):
     await state.update_data(ad_id=int(call.data.split("_")[1]))
@@ -228,57 +231,10 @@ async def set_time(message: Message, state: FSMContext):
         return await message.answer("❌ Xato format")
 
     data = await state.get_data()
-
     scheduler.add_job(send, "date", run_date=dt, args=[data["ad_id"]])
 
     await message.answer("⏰ Rejalandi")
     await state.clear()
-
-
-# ================= ADS LIST + STATS =================
-@dp.message(F.text == "📋 Reklamalarim")
-async def ads(message: Message):
-    async with aiosqlite.connect(DB) as db:
-        rows = await (await db.execute("SELECT id,name,views,sent FROM ads")).fetchall()
-
-    for r in rows:
-        kb = InlineKeyboardMarkup(inline_keyboard=[
-            [InlineKeyboardButton(text="👁 Ko‘rish", callback_data=f"view_{r[0]}"),
-             InlineKeyboardButton(text="📤 Yuborish", callback_data=f"send_{r[0]}")]
-        ])
-
-        await message.answer(
-            f"📢 {r[1]}\n👁 {r[2]} | 📤 {r[3]}",
-            reply_markup=kb
-        )
-
-
-@dp.callback_query(F.data.startswith("view_"))
-async def view(call: CallbackQuery):
-    ad_id = int(call.data.split("_")[1])
-
-    async with aiosqlite.connect(DB) as db:
-        ad = await (await db.execute("SELECT * FROM ads WHERE id=?", (ad_id,))).fetchone()
-        await db.execute("UPDATE ads SET views = views + 1 WHERE id=?", (ad_id,))
-        await db.commit()
-
-    await call.message.answer(ad[2])
-
-
-# ================= CHANNELS =================
-@dp.message(F.text == "📡 Kanallar")
-async def channels(message: Message):
-    async with aiosqlite.connect(DB) as db:
-        rows = await (await db.execute("SELECT channel_id FROM channels")).fetchall()
-
-    text = "\n".join([r[0] for r in rows]) if rows else "Bo‘sh"
-    await message.answer("📡 Kanallar:\n" + text)
-
-
-# ================= CANCEL =================
-@dp.callback_query(F.data == "cancel")
-async def cancel(call: CallbackQuery):
-    await call.message.answer("❌ Bekor")
 
 
 # ================= RUN =================
