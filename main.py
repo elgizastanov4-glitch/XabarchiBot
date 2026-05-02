@@ -224,6 +224,32 @@ async def send_now(c: CallbackQuery):
     await c.message.answer("📤 Yuborildi")
 
 
+# 📋 REKLAMALARIM (SHUNI HAM QO‘SHIB QO‘YDIM)
+@dp.message(F.text == "📋 Reklamalarim")
+async def my_ads(m: Message):
+    async with aiosqlite.connect(DB) as db:
+        rows = await (await db.execute(
+            "SELECT id, name FROM ads ORDER BY id DESC"
+        )).fetchall()
+
+    if not rows:
+        return await m.answer("📭 Reklamalar yo‘q")
+
+    text = "📋 Sizning reklamalar:\n\n"
+    kb = []
+
+    for r in rows:
+        text += f"#{r[0]} - {r[1]}\n"
+        kb.append([
+            InlineKeyboardButton(
+                text=f"📤 Yuborish #{r[0]}",
+                callback_data=f"send_{r[0]}"
+            )
+        ])
+
+    await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+
+
 # ⏰ SCHEDULE
 @dp.callback_query(F.data.startswith("schedule_"))
 async def schedule_ad(c: CallbackQuery, state: FSMContext):
@@ -268,7 +294,6 @@ async def confirm_delete(c: CallbackQuery):
 @dp.callback_query(F.data == "cancel_del")
 async def cancel_delete(c: CallbackQuery):
     await c.message.answer("❎ Bekor qilindi")
-
 
 # ================= CHANNELS =================
 @dp.message(F.text == "📡 Kanallar")
