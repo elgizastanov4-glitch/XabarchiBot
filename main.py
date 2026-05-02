@@ -217,19 +217,57 @@ async def send(ad_id):
 
 
 # ================= CALLBACK =================
+
 @dp.callback_query(F.data.startswith("send_"))
 async def send_now(c: CallbackQuery):
     await send(int(c.data.split("_")[1]))
     await c.message.answer("📤 Yuborildi")
 
 
+# ⏰ SCHEDULE
+@dp.callback_query(F.data.startswith("schedule_"))
+async def schedule_ad(c: CallbackQuery, state: FSMContext):
+    ad_id = int(c.data.split("_")[1])
+
+    await state.update_data(ad_id=ad_id)
+    await state.set_state(AdState.schedule)
+
+    await c.message.answer(
+        "⏰ Vaqtni kiriting:\n\nFormat:\n2026-05-03 18:30"
+    )
+
+
+# 🗑 DELETE (TASDIQLASH BILAN)
 @dp.callback_query(F.data.startswith("del_"))
 async def delete(c: CallbackQuery):
     ad_id = int(c.data.split("_")[1])
+
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ Ha", callback_data=f"confirm_del_{ad_id}"),
+            InlineKeyboardButton(text="❌ Yo‘q", callback_data="cancel_del")
+        ]
+    ])
+
+    await c.message.answer("⚠️ O‘chirishni tasdiqlaysizmi?", reply_markup=kb)
+
+
+# 🗑 HA BOSILSA — O‘CHIRISH
+@dp.callback_query(F.data.startswith("confirm_del_"))
+async def confirm_delete(c: CallbackQuery):
+    ad_id = int(c.data.split("_")[2])
+
     async with aiosqlite.connect(DB) as db:
         await db.execute("DELETE FROM ads WHERE id=?", (ad_id,))
         await db.commit()
-    await c.message.answer("🗑 O‘chirildi")
+
+    await c.message.answer("🗑 Reklama o‘chirildi")
+
+
+# ❌ YO‘Q BOSILSA — BEKOR
+@dp.callback_query(F.data == "cancel_del")
+async def cancel_delete(c: CallbackQuery):
+    await c.message.answer("❎ Bekor qilindi")
 
 
 # ================= CHANNELS =================
