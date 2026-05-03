@@ -294,7 +294,6 @@ def add_schedule(ad_id: int, time_str: str):
         replace_existing=True
     )
 
-
 # ================= CALLBACK =================
 
 @dp.callback_query(F.data.startswith("send_"))
@@ -319,10 +318,15 @@ async def my_ads(m: Message):
 
     for r in rows:
         text += f"#{r[0]} - {r[1]}\n"
+
         kb.append([
             InlineKeyboardButton(
                 text=f"📤 Yuborish #{r[0]}",
                 callback_data=f"send_{r[0]}"
+            ),
+            InlineKeyboardButton(
+                text="🗑 O‘chirish",
+                callback_data=f"del_{r[0]}"
             )
         ])
 
@@ -342,14 +346,14 @@ async def schedule_ad(c: CallbackQuery, state: FSMContext):
     )
 
 
-# ⏰ SCHEDULE (2-QADAM - SHU MUHIM QISM)
+# ⏰ SCHEDULE (2-QADAM)
 @dp.message(AdState.schedule)
 async def schedule_save(m: Message, state: FSMContext):
     data = await state.get_data()
     ad_id = data["ad_id"]
 
     try:
-        add_schedule(ad_id, m.text)  # 👈 scheduler shu yerda ishlaydi
+        add_schedule(ad_id, m.text)
         await m.answer("⏰ Reklama muvaffaqiyatli rejalashtirildi!")
     except Exception as e:
         await m.answer(f"❌ Xatolik: {e}")
@@ -357,7 +361,7 @@ async def schedule_save(m: Message, state: FSMContext):
     await state.clear()
 
 
-# 🗑 DELETE (TASDIQLASH BILAN)
+# 🗑 DELETE (tasdiqlash)
 @dp.callback_query(F.data.startswith("del_"))
 async def delete(c: CallbackQuery):
     ad_id = int(c.data.split("_")[1])
@@ -388,6 +392,7 @@ async def confirm_delete(c: CallbackQuery):
 @dp.callback_query(F.data == "cancel_del")
 async def cancel_delete(c: CallbackQuery):
     await c.message.answer("❎ Bekor qilindi")
+
 # ================= CHANNELS =================
 @dp.message(F.text == "📡 Kanallar")
 async def channels(m: Message):
