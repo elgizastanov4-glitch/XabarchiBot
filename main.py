@@ -468,7 +468,7 @@ async def channels(m: Message):
         kb.append([
             InlineKeyboardButton(
                 text=f"🗑 O‘chirish {channel}",
-                callback_data=f"del_ch_{channel}"
+                callback_data=f"del_ch_{channel}"   # shu qoldi
             )
         ])
 
