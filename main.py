@@ -408,6 +408,32 @@ async def delete_channel(c: CallbackQuery):
     await c.message.delete()
         
 # ================= PERMANENT BUTTONS =================
+@dp.message(F.text == "🔘 Doimiy tugma sozlash")
+async def perm_list(m: Message):
+    async with aiosqlite.connect(DB) as db:
+        rows = await (await db.execute(
+            "SELECT id, name FROM permanent_buttons"
+        )).fetchall()
+
+    if not rows:
+        return await m.answer("📭 Doimiy tugmalar yo‘q")
+
+    text = "🔘 DOIMIY TUGMALAR:\n\n"
+    kb = []
+
+    for r in rows:
+        text += f"#{r[0]} - {r[1]}\n"
+
+        kb.append([
+            InlineKeyboardButton(
+                text=f"🗑 O‘chirish #{r[0]}",
+                callback_data=f"del_perm_{r[0]}"
+            )
+        ])
+
+    await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
+
+
 @dp.callback_query(F.data.startswith("del_perm_"))
 async def del_perm(c: CallbackQuery):
     btn_id = c.data.replace("del_perm_", "")
@@ -419,8 +445,8 @@ async def del_perm(c: CallbackQuery):
         )
         await db.commit()
 
-    await c.answer("🗑 O‘chirildi", show_alert=True)
-    await c.message.delete()
+    await c.answer("🗑 O‘chirildi")   # popup chiqadi
+    await c.message.delete()         # ro‘yxatdan ham yo‘qoladi
         
 # ================= CHANNELS LIST =================
 @dp.message(F.text == "📡 Kanallar")
