@@ -90,6 +90,11 @@ class DelChannelState(StatesGroup):
     waiting = State()
 
 
+# 🗑 DOIMIY TUGMA O‘CHIRISH STATE
+class DelPermState(StatesGroup):
+    waiting = State()
+
+
 # ================= CHECK SUB =================
 async def check_sub(user_id):
     try:
