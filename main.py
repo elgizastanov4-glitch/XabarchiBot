@@ -361,9 +361,9 @@ async def schedule_save(m: Message, state: FSMContext):
     await state.clear()
 
 
-# 🗑 DELETE (tasdiqlash)
+# 🗑 REKLAMA O‘CHIRISH
 @dp.callback_query(F.data.startswith("del_"))
-async def delete(c: CallbackQuery):
+async def delete_ad(c: CallbackQuery):
     ad_id = int(c.data.split("_")[1])
 
     kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -373,10 +373,9 @@ async def delete(c: CallbackQuery):
         ]
     ])
 
-    await c.message.answer("⚠️ O‘chirishni tasdiqlaysizmi?", reply_markup=kb)
+    await c.message.answer("⚠️ Reklamani o‘chirasizmi?", reply_markup=kb)
 
 
-# 🗑 HA BOSILSA — O‘CHIRISH
 @dp.callback_query(F.data.startswith("confirm_del_"))
 async def confirm_delete(c: CallbackQuery):
     ad_id = int(c.data.split("_")[2])
@@ -388,10 +387,24 @@ async def confirm_delete(c: CallbackQuery):
     await c.message.answer("🗑 Reklama o‘chirildi")
 
 
-# ❌ YO‘Q BOSILSA — BEKOR
 @dp.callback_query(F.data == "cancel_del")
 async def cancel_delete(c: CallbackQuery):
     await c.message.answer("❎ Bekor qilindi")
+
+
+# ================= CHANNEL DELETE (🔥 YANGI QO‘SHILDI) =================
+@dp.callback_query(F.data.startswith("del_ch_"))
+async def delete_channel(c: CallbackQuery):
+    channel_id = c.data.replace("del_ch_", "")
+
+    async with aiosqlite.connect(DB) as db:
+        await db.execute(
+            "DELETE FROM channels WHERE channel_id=?",
+            (channel_id,)
+        )
+        await db.commit()
+
+    await c.message.answer(f"🗑 Kanal o‘chirildi:\n{channel_id}")
 
 # ================= CHANNELS =================
 @dp.message(F.text == "📡 Kanallar")
