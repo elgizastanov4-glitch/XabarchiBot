@@ -395,38 +395,32 @@ async def cancel_delete(c: CallbackQuery):
 # ================= CHANNEL DELETE FIX =================
 @dp.callback_query(F.data.startswith("del_ch_"))
 async def delete_channel(c: CallbackQuery):
-    channel_id = c.data.split("del_ch_", 1)[1]
+    channel_id = c.data.replace("del_ch_", "")
 
     async with aiosqlite.connect(DB) as db:
-        cursor = await db.execute(
+        await db.execute(
             "DELETE FROM channels WHERE channel_id=?",
             (channel_id,)
         )
         await db.commit()
 
-    if cursor.rowcount == 0:
-        await c.answer("❌ Kanal topilmadi", show_alert=True)
-    else:
-        await c.answer("🗑 Kanal o‘chirildi", show_alert=True)
-        await c.message.delete()
+    await c.answer("🗑 Kanal o‘chirildi", show_alert=True)
+    await c.message.delete()
         
 # ================= PERMANENT BUTTONS =================
 @dp.callback_query(F.data.startswith("del_perm_"))
 async def del_perm(c: CallbackQuery):
-    btn_id = c.data.split("del_perm_", 1)[1]
+    btn_id = c.data.replace("del_perm_", "")
 
     async with aiosqlite.connect(DB) as db:
-        cursor = await db.execute(
+        await db.execute(
             "DELETE FROM permanent_buttons WHERE id=?",
             (btn_id,)
         )
         await db.commit()
 
-    if cursor.rowcount == 0:
-        await c.answer("❌ Topilmadi", show_alert=True)
-    else:
-        await c.answer("🗑 O‘chirildi", show_alert=True)
-        await c.message.delete()
+    await c.answer("🗑 O‘chirildi", show_alert=True)
+    await c.message.delete()
         
 # ================= CHANNELS LIST =================
 @dp.message(F.text == "📡 Kanallar")
