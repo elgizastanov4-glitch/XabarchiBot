@@ -395,7 +395,7 @@ async def cancel_delete(c: CallbackQuery):
 # ================= CHANNEL DELETE FIX =================
 @dp.callback_query(F.data.startswith("del_ch_"))
 async def delete_channel(c: CallbackQuery):
-    channel_id = c.data.replace("del_ch_", "")
+    channel_id = c.data.split("del_ch_", 1)[1]
 
     async with aiosqlite.connect(DB) as db:
         cursor = await db.execute(
@@ -405,42 +405,15 @@ async def delete_channel(c: CallbackQuery):
         await db.commit()
 
     if cursor.rowcount == 0:
-        await c.answer("❌ Kanal topilmadi")
+        await c.answer("❌ Kanal topilmadi", show_alert=True)
     else:
-        await c.answer("🗑 Kanal o‘chirildi")
-
-    await c.message.delete()
-
+        await c.answer("🗑 Kanal o‘chirildi", show_alert=True)
+        await c.message.delete()
+        
 # ================= PERMANENT BUTTONS =================
-@dp.message(F.text == "🔘 Doimiy tugma sozlash")
-async def perm_list(m: Message):
-    async with aiosqlite.connect(DB) as db:
-        rows = await (await db.execute(
-            "SELECT id, name, link FROM permanent_buttons"
-        )).fetchall()
-
-    if not rows:
-        return await m.answer("📭 Doimiy tugmalar yo‘q")
-
-    text = "🔘 DOIMIY TUGMALAR:\n\n"
-    kb = []
-
-    for r in rows:
-        text += f"#{r[0]} - {r[1]}\n"
-
-        kb.append([
-            InlineKeyboardButton(
-                text=f"🗑 O‘chirish #{r[0]}",
-                callback_data=f"del_perm_{r[0]}"
-            )
-        ])
-
-    await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
-
-
 @dp.callback_query(F.data.startswith("del_perm_"))
 async def del_perm(c: CallbackQuery):
-    btn_id = c.data.replace("del_perm_", "")
+    btn_id = c.data.split("del_perm_", 1)[1]
 
     async with aiosqlite.connect(DB) as db:
         cursor = await db.execute(
@@ -450,12 +423,11 @@ async def del_perm(c: CallbackQuery):
         await db.commit()
 
     if cursor.rowcount == 0:
-        await c.answer("❌ Topilmadi")
+        await c.answer("❌ Topilmadi", show_alert=True)
     else:
-        await c.answer("🗑 O‘chirildi")
-
-    await c.message.delete()
-
+        await c.answer("🗑 O‘chirildi", show_alert=True)
+        await c.message.delete()
+        
 # ================= CHANNELS LIST =================
 @dp.message(F.text == "📡 Kanallar")
 async def channels(m: Message):
