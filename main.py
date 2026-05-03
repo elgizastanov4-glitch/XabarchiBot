@@ -85,6 +85,11 @@ class AdState(StatesGroup):
     schedule = State()
 
 
+# 🗑 KANAL O‘CHIRISH STATE
+class DelChannelState(StatesGroup):
+    waiting = State()
+
+
 # ================= CHECK SUB =================
 async def check_sub(user_id):
     try:
@@ -107,8 +112,11 @@ def menu():
                 KeyboardButton(text="➕ Kanal qo‘shish")
             ],
             [
-                KeyboardButton(text="📊 Statistika"),
-                KeyboardButton(text="🔘 Doimiy tugma sozlash")  # 🔥 SHU QO‘SHILDI
+                KeyboardButton(text="🗑 Kanal o‘chirish"),  # 🔥 SHU QO‘SHILDI
+                KeyboardButton(text="📊 Statistika")
+            ],
+            [
+                KeyboardButton(text="🔘 Doimiy tugma sozlash")
             ]
         ],
         resize_keyboard=True
