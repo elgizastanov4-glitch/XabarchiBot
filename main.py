@@ -392,7 +392,7 @@ async def cancel_delete(c: CallbackQuery):
     await c.message.answer("❎ Bekor qilindi")
 
 
-# ================= CHANNEL DELETE (🔥 YANGI QO‘SHILDI) =================
+# ================= CHANNEL DELETE =================
 @dp.callback_query(F.data.startswith("del_ch_"))
 async def delete_channel(c: CallbackQuery):
     channel_id = c.data.replace("del_ch_", "")
@@ -406,11 +406,14 @@ async def delete_channel(c: CallbackQuery):
 
     await c.message.answer(f"🗑 Kanal o‘chirildi:\n{channel_id}")
 
-# ================= CHANNELS =================
+
+# ================= CHANNELS LIST =================
 @dp.message(F.text == "📡 Kanallar")
 async def channels(m: Message):
     async with aiosqlite.connect(DB) as db:
-        rows = await (await db.execute("SELECT channel_id FROM channels")).fetchall()
+        rows = await (await db.execute(
+            "SELECT channel_id FROM channels"
+        )).fetchall()
 
     if not rows:
         return await m.answer("📭 Kanallar yo‘q")
@@ -424,27 +427,40 @@ async def channels(m: Message):
 
         kb.append([
             InlineKeyboardButton(
-                text="🗑 O‘chirish",
+                text=f"🗑 O‘chirish {channel}",
                 callback_data=f"del_ch_{channel}"
             )
         ])
 
     await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
-# ================= ADD CHANNEL =================
+
+# ================= ADD CHANNEL (FIXED) =================
+class ChannelState(StatesGroup):
+    waiting = State()
+
+
 @dp.message(F.text == "➕ Kanal qo‘shish")
-async def add_ch(m: Message):
-    await m.answer("Kanal username kiriting (@ bilan)")
+async def add_ch(m: Message, state: FSMContext):
+    await state.set_state(ChannelState.waiting)
+    await m.answer("📡 Kanal username kiriting (@ bilan)")
 
 
-@dp.message(F.text.startswith("@"))
-async def save_ch(m: Message):
+@dp.message(ChannelState.waiting)
+async def save_ch(m: Message, state: FSMContext):
+
+    if not m.text.startswith("@"):
+        return await m.answer("❌ Kanal @ bilan boshlanishi kerak")
+
     async with aiosqlite.connect(DB) as db:
-        await db.execute("INSERT OR IGNORE INTO channels(channel_id) VALUES(?)",
-                         (m.text,))
+        await db.execute(
+            "INSERT OR IGNORE INTO channels(channel_id) VALUES(?)",
+            (m.text,)
+        )
         await db.commit()
-    await m.answer("➕ Kanal qo‘shildi")
 
+    await state.clear()
+    await m.answer("➕ Kanal qo‘shildi")
 
 # ================= ADD PERMANENT BUTTON =================
 @dp.message(F.text.startswith("/addbutton"))
