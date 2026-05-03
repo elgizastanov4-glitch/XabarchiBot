@@ -16,7 +16,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # ================= CONFIG =================
 BOT_TOKEN = "8608111715:AAF0WAFMAeSebO0ketA9rhgkNVDw7lIFPMk"
-ADMIN_ID = 6884014716
+ADMIN_ID = 823197520
 
 DB = "/tmp/bot.db"
 REQUIRED_CHANNEL = "@kinolashamz"   # xohlasang o‘chir
