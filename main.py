@@ -112,11 +112,12 @@ def menu():
                 KeyboardButton(text="➕ Kanal qo‘shish")
             ],
             [
-                KeyboardButton(text="🗑 Kanal o‘chirish"),  # 🔥 SHU QO‘SHILDI
+                KeyboardButton(text="🗑 Kanal o‘chirish"),
                 KeyboardButton(text="📊 Statistika")
             ],
             [
-                KeyboardButton(text="🔘 Doimiy tugma sozlash")
+                KeyboardButton(text="🔘 Doimiy tugmalar ròyhati"),
+                KeyboardButton(text="🗑 Doimiy tugmani o‘chirish")  # 👈 YANGI
             ]
         ],
         resize_keyboard=True
@@ -140,7 +141,7 @@ async def start(m: Message):
     await m.answer("🚀 ADMIN PANEL", reply_markup=menu())
 
 
-# ================= KANAL O‘CHIRISH (YANGI QO‘SHILDI) =================
+# ================= KANAL O‘CHIRISH =================
 @dp.message(F.text == "🗑 Kanal o‘chirish")
 async def del_channel_start(m: Message, state: FSMContext):
     await state.set_state(DelChannelState.waiting)
@@ -163,6 +164,33 @@ async def del_channel(m: Message, state: FSMContext):
         await m.answer("❌ Kanal topilmadi")
     else:
         await m.answer("🗑 Kanal o‘chirildi")
+
+    await state.clear()
+
+
+# ================= 🗑 DOIMIY TUGMA O‘CHIRISH (YANGI QO‘SHILDI) =================
+@dp.message(F.text == "🗑 Doimiy tugma o‘chirish")
+async def del_perm_start(m: Message, state: FSMContext):
+    await state.set_state(DelPermState.waiting)
+    await m.answer("❌ O‘chirmoqchi bo‘lgan tugma ID sini yozing")
+
+
+@dp.message(DelPermState.waiting)
+async def del_perm(m: Message, state: FSMContext):
+
+    btn_id = m.text.strip()
+
+    async with aiosqlite.connect(DB) as db:
+        cursor = await db.execute(
+            "DELETE FROM permanent_buttons WHERE id=?",
+            (btn_id,)
+        )
+        await db.commit()
+
+    if cursor.rowcount == 0:
+        await m.answer("❌ Tugma topilmadi")
+    else:
+        await m.answer("🗑 Doimiy tugma o‘chirildi")
 
     await state.clear()
 
@@ -220,7 +248,6 @@ async def buttons(m: Message, state: FSMContext):
             btns.append({"name": n, "link": l})
 
     await save(m, state, btns)
-
 
 # ================= SAVE =================
 async def save(m, state, buttons):
