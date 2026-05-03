@@ -140,6 +140,33 @@ async def start(m: Message):
     await m.answer("🚀 ADMIN PANEL", reply_markup=menu())
 
 
+# ================= KANAL O‘CHIRISH (YANGI QO‘SHILDI) =================
+@dp.message(F.text == "🗑 Kanal o‘chirish")
+async def del_channel_start(m: Message, state: FSMContext):
+    await state.set_state(DelChannelState.waiting)
+    await m.answer("❌ O‘chirmoqchi bo‘lgan kanalni yozing:\n\nMisol: @kanalname")
+
+
+@dp.message(DelChannelState.waiting)
+async def del_channel(m: Message, state: FSMContext):
+
+    channel = m.text.strip()
+
+    async with aiosqlite.connect(DB) as db:
+        cursor = await db.execute(
+            "DELETE FROM channels WHERE channel_id=?",
+            (channel,)
+        )
+        await db.commit()
+
+    if cursor.rowcount == 0:
+        await m.answer("❌ Kanal topilmadi")
+    else:
+        await m.answer("🗑 Kanal o‘chirildi")
+
+    await state.clear()
+
+
 # ================= CREATE AD =================
 @dp.message(F.text == "📝 Reklama yaratish")
 async def create(m: Message, state: FSMContext):
@@ -191,6 +218,7 @@ async def buttons(m: Message, state: FSMContext):
         if "|" in i:
             n, l = i.split("|", 1)
             btns.append({"name": n, "link": l})
+
     await save(m, state, btns)
 
 
