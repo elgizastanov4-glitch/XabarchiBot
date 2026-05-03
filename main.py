@@ -16,7 +16,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 # ================= CONFIG =================
 BOT_TOKEN = "8608111715:AAF0WAFMAeSebO0ketA9rhgkNVDw7lIFPMk"
-ADMIN_ID = 823197520
+ADMIN_ID = 6884014716
 
 DB = "/tmp/bot.db"
 REQUIRED_CHANNEL = "@kinolashamz"   # xohlasang o‘chir
@@ -58,8 +58,22 @@ async def init_db():
         )
         """)
 
-        await db.commit()
+        # 🔥 DOIMIY INLINE TUGMALAR (KO‘P TA)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS permanent_buttons(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT,
+            link TEXT
+        )
+        """)
 
+        # 🔥 DEFAULT BIRINCHI TUGMA (ixtiyoriy)
+        await db.execute("""
+        INSERT OR IGNORE INTO permanent_buttons(name, link)
+        VALUES(?, ?)
+        """, ("📢 Kanal", "https://t.me/kinolashamz"))
+
+        await db.commit()
 
 # ================= STATES =================
 class AdState(StatesGroup):
@@ -93,12 +107,12 @@ def menu():
                 KeyboardButton(text="➕ Kanal qo‘shish")
             ],
             [
-                KeyboardButton(text="📊 Statistika")
+                KeyboardButton(text="📊 Statistika"),
+                KeyboardButton(text="🔘 Doimiy tugma sozlash")  # 🔥 SHU QO‘SHILDI
             ]
         ],
         resize_keyboard=True
     )
-
 
 # ================= START =================
 @dp.message(F.text == "/start")
@@ -202,22 +216,67 @@ async def save(m, state, buttons):
 # ================= SEND =================
 async def send(ad_id):
     async with aiosqlite.connect(DB) as db:
-        ad = await (await db.execute("SELECT * FROM ads WHERE id=?", (ad_id,))).fetchone()
-        channels = await (await db.execute("SELECT channel_id FROM channels")).fetchall()
+        ad = await (
+            await db.execute(
+                "SELECT * FROM ads WHERE id=?",
+                (ad_id,)
+            )
+        ).fetchone()
+
+        channels = await (
+            await db.execute(
+                "SELECT channel_id FROM channels"
+            )
+        ).fetchall()
+
+        # doimiy tugmalarni olish
+        permanent = await (
+            await db.execute(
+                "SELECT name, link FROM permanent_buttons"
+            )
+        ).fetchall()
 
     buttons = json.loads(ad[4]) if ad[4] else []
 
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=b["name"], url=b["link"])]
-        for b in buttons
-    ]) if buttons else None
+    all_buttons = []
+
+    # reklamaning o‘z tugmalari
+    for b in buttons:
+        all_buttons.append([
+            InlineKeyboardButton(
+                text=b["name"],
+                url=b["link"]
+            )
+        ])
+
+    # doimiy tugmalar
+    for p in permanent:
+        all_buttons.append([
+            InlineKeyboardButton(
+                text=p[0],
+                url=p[1]
+            )
+        ])
+
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=all_buttons
+    ) if all_buttons else None
 
     for ch in channels:
         try:
             if ad[3]:
-                await bot.send_photo(ch[0], ad[3], caption=ad[2], reply_markup=markup)
+                await bot.send_photo(
+                    ch[0],
+                    ad[3],
+                    caption=ad[2],
+                    reply_markup=markup
+                )
             else:
-                await bot.send_message(ch[0], ad[2], reply_markup=markup)
+                await bot.send_message(
+                    ch[0],
+                    ad[2],
+                    reply_markup=markup
+                )
         except:
             pass
 
@@ -352,6 +411,31 @@ async def save_ch(m: Message):
                          (m.text,))
         await db.commit()
     await m.answer("➕ Kanal qo‘shildi")
+
+
+# ================= ADD PERMANENT BUTTON =================
+@dp.message(F.text.startswith("/addbutton"))
+async def add_button(m: Message):
+    if m.from_user.id != ADMIN_ID:
+        return await m.answer("❌ Ruxsat yo‘q")
+
+    try:
+        data = m.text.replace("/addbutton ", "")
+        name, link = data.split("|", 1)
+
+        async with aiosqlite.connect(DB) as db:
+            await db.execute(
+                "INSERT INTO permanent_buttons(name, link) VALUES(?, ?)",
+                (name.strip(), link.strip())
+            )
+            await db.commit()
+
+        await m.answer("✅ Doimiy inline tugma qo‘shildi")
+
+    except:
+        await m.answer(
+            "❌ Format xato\n\nMisol:\n/addbutton Kino kanal|https://t.me/kinolashamz"
+        )
 
 
 # ================= STATS =================
