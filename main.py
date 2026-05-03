@@ -174,7 +174,7 @@ async def del_channel(m: Message, state: FSMContext):
 
 
 # ================= 🗑 DOIMIY TUGMA O‘CHIRISH (YANGI QO‘SHILDI) =================
-@dp.message(F.text == "🗑 Doimiy tugma o‘chirish")
+@dp.message(F.text == "🗑 Doimiy tugmani o‘chirish")
 async def del_perm_start(m: Message, state: FSMContext):
     await state.set_state(DelPermState.waiting)
     await m.answer("❌ O‘chirmoqchi bo‘lgan tugma ID sini yozing")
@@ -476,7 +476,7 @@ async def delete_channel(c: CallbackQuery):
     await c.message.delete()
         
 # ================= PERMANENT BUTTONS =================
-@dp.message(F.text == "🔘 Doimiy tugma sozlash")
+@dp.message(F.text == "🔘 Doimiy tugmalar ròyhati")
 async def perm_list(m: Message):
     async with aiosqlite.connect(DB) as db:
         rows = await (await db.execute(
