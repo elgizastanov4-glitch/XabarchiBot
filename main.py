@@ -399,9 +399,24 @@ async def channels(m: Message):
     async with aiosqlite.connect(DB) as db:
         rows = await (await db.execute("SELECT channel_id FROM channels")).fetchall()
 
-    text = "\n".join([r[0] for r in rows]) if rows else "Bo‘sh"
-    await m.answer("📡 Kanallar:\n" + text)
+    if not rows:
+        return await m.answer("📭 Kanallar yo‘q")
 
+    text = "📡 Kanallar:\n\n"
+    kb = []
+
+    for r in rows:
+        channel = r[0]
+        text += f"{channel}\n"
+
+        kb.append([
+            InlineKeyboardButton(
+                text="🗑 O‘chirish",
+                callback_data=f"del_ch_{channel}"
+            )
+        ])
+
+    await m.answer(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=kb))
 
 # ================= ADD CHANNEL =================
 @dp.message(F.text == "➕ Kanal qo‘shish")
