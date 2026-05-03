@@ -395,7 +395,7 @@ async def cancel_delete(c: CallbackQuery):
 # ================= CHANNEL DELETE =================
 @dp.callback_query(F.data.startswith("del_ch_"))
 async def delete_channel(c: CallbackQuery):
-    channel_id = c.data.replace("del_ch_", "")
+    channel_id = c.data.split("_", 2)[2]  # del_ch_@kanal -> @kanal
 
     async with aiosqlite.connect(DB) as db:
         await db.execute(
